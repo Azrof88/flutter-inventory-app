@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../data/models/user_model.dart';
 import '../data/services/auth_service.dart'; // Import AuthService
 import '../screens/auth/login_screen.dart'; // Import LoginScreen for navigation
+import '../screens/products/product_list_screen.dart'; // <-- IMPORT THE NEW SCREEN
 
 class AppSidebar extends StatelessWidget {
   final UserRole userRole;
@@ -34,12 +35,31 @@ class AppSidebar extends StatelessWidget {
             leading: const Icon(Icons.dashboard),
             title: const Text('Dashboard'),
             onTap: () {
+              // AZROF-NOTE: We may want to prevent re-navigating if already on the dashboard.
               Navigator.pop(context);
             },
           ),
+        
+          // Replace your old "Products" ListTile with this one.
           ListTile(
             leading: const Icon(Icons.inventory_2),
             title: const Text('Products'),
+            onTap: () {
+              // First, close the drawer so it's not open in the background.
+              Navigator.pop(context);
+              // Then, navigate to the new ProductListScreen.
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  // 2. We pass the current user's role to the screen so it knows
+                  // which UI variations to display (e.g., show/hide delete button).
+                  builder: (context) => ProductListScreen(userRole: userRole),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.history),
+            title: const Text('Transaction History'),
             onTap: () {
               Navigator.pop(context);
             },
