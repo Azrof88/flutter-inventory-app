@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../data/models/user_model.dart';
-// MUBIN/MEHEDI-NOTE: This will eventually be replaced with the real Product model
-// import '../../data/models/product_model.dart';
+import 'add_edit_product_screen.dart'; // <-- IMPORT THE NEW SCREEN
+import '../../data/models/dummy_product_model.dart'; // <-- USE THE SHARED MODEL
 
-// A simple local class for dummy data. This makes the code cleaner.
-class _DummyProduct {
-  final String name;
-  final String sku;
-  final int quantity;
-  _DummyProduct({required this.name, required this.sku, required this.quantity});
-}
+
 
 class ProductListScreen extends StatelessWidget {
   final UserRole userRole;
@@ -21,11 +15,11 @@ class ProductListScreen extends StatelessWidget {
     // --- DUMMY DATA ---
     // MEHEDI-TODO: This hardcoded list will be replaced by a real-time stream
     // from your Firestore 'products' collection. You'll use a StreamBuilder here.
-    final List<_DummyProduct> products = [
-      _DummyProduct(name: 'Laptop Pro X1', sku: 'LP-12345', quantity: 15),
-      _DummyProduct(name: 'Wireless Mouse', sku: 'WM-67890', quantity: 7),
-      _DummyProduct(name: 'Mechanical Keyboard', sku: 'MK-10112', quantity: 23),
-      _DummyProduct(name: '4K Monitor', sku: 'MON-4K-001', quantity: 2),
+    final List<DummyProduct> products = [
+      DummyProduct(name: 'Laptop Pro X1', sku: 'LP-12345', quantity: 15),
+      DummyProduct(name: 'Wireless Mouse', sku: 'WM-67890', quantity: 7),
+      DummyProduct(name: 'Mechanical Keyboard', sku: 'MK-10112', quantity: 23),
+      DummyProduct(name: '4K Monitor', sku: 'MON-4K-001', quantity: 2),
     ];
 
     return Scaffold(
@@ -34,7 +28,7 @@ class ProductListScreen extends StatelessWidget {
         // The AppBar is styled consistently with the rest of the app
       ),
       body: ListView.builder(
-        itemCount: products.length,
+       itemCount: products.length,
         itemBuilder: (context, index) {
           final product = products[index];
           return Card(
@@ -45,20 +39,23 @@ class ProductListScreen extends StatelessWidget {
               contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               title: Text(product.name, style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: Text('SKU: ${product.sku}'),
-              // We use a Chip to display quantity, which looks professional
               leading: Chip(
                 label: Text('Qty: ${product.quantity}'),
                 backgroundColor: product.quantity < 5 ? Colors.red.shade100 : Colors.green.shade100,
                 labelStyle: TextStyle(color: product.quantity < 5 ? Colors.red.shade900 : Colors.green.shade900),
               ),
-              trailing: _buildActionButtons(context),
+              // The call to _buildActionButtons now correctly passes the specific 'product'
+              // for this list item.
+              trailing: _buildActionButtons(context, product),
             ),
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Navigate to the add new product screen
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (context) => const AddEditProductScreen()),
+          );
         },
         child: const Icon(Icons.add),
       ),
@@ -67,7 +64,7 @@ class ProductListScreen extends StatelessWidget {
 
   // This private method dynamically builds the action buttons.
   // This is a clean way to separate the UI logic.
-  Widget _buildActionButtons(BuildContext context) {
+  Widget _buildActionButtons(BuildContext context, DummyProduct product) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -77,7 +74,12 @@ class ProductListScreen extends StatelessWidget {
           icon: const Icon(Icons.edit, color: Colors.blueAccent),
           tooltip: 'Edit Product',
           onPressed: () {
-            // TODO: Navigate to an edit product screen
+            // Navigate to the screen in 'Edit' mode, passing the product data.
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => AddEditProductScreen(product: product),
+              ),
+            );
           },
         ),
 
