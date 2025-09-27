@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../data/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // <-- ADD THIS LINE
+import '../../data/models/user_model.dart'; // Import the user model to check the role
 import '../dashboard/dashboard_screen.dart'; // To navigate after login
+import '../dashboard/admin_dashboard_screen.dart'; // Import the admin dashboard
+import '../dashboard/staff_dashboard_screen.dart'; // Import the staff dashboard
 import 'signup_screen.dart'; // Import the new sign up screen
+import 'forgot_password_screen.dart'; // <-- IMPORT THE NEW SCREEN
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -36,16 +42,41 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
 
+    // --- AZROF: REMEMBER ME LOGIC (Saves email locally) ---
+    // MEHEDI-NOTE: This feature is for user convenience and saves the email only.
+    // It is separate from the real "session persistence" that you will implement
+    // using FirebaseAuth's `authStateChanges()` stream to keep the user
+    // automatically logged in after they close and reopen the app.
+    final prefs = await SharedPreferences.getInstance();
+    if (_rememberMe) {
+      // If checked, save the email
+      await prefs.setString('remembered_email', _emailController.text.trim());
+    } else {
+      // If unchecked, remove any saved email
+      await prefs.remove('remembered_email');
+    }
+
     try {
       final user = await AuthService.instance.login(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
 
+      // --- NEW: ROLE-BASED NAVIGATION ---
+      // Here, we check the role of the user returned from the AuthService
+      // and navigate to the appropriate dashboard.
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
-        );
+        if (user.role == UserRole.admin) {
+          // Navigate to Admin Dashboard
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+          );
+        } else {
+          // Navigate to Staff Dashboard for any other role
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const StaffDashboardScreen()),
+          );
+        }
       }
     } catch (e) {
       setState(() {
@@ -60,6 +91,24 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _loadUserEmail(); // <-- ADD THIS LINE
+  }
+
+// --- NEW METHOD FOR REMEMBER ME ---
+  // This method loads the user's email from the device's local storage.
+  void _loadUserEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? email = prefs.getString('remembered_email');
+    if (email != null) {
+      setState(() {
+        _emailController.text = email;
+        _rememberMe = true;
+      });
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -154,7 +203,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ),
                         TextButton(
-                          onPressed: () { /* TODO: Implement logic */ },
+                          // --- UPDATE THIS BUTTON ---
+                          onPressed: () {
+                            // Navigate to the Forgot Password screen
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const ForgotPasswordScreen(),
+                              ),
+                            );
+                          },
                           child: const Text('Forgot Password?', style: TextStyle(color: Colors.white70)),
                         ),
                       ],

@@ -16,9 +16,33 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+// --- NEW: State for dynamic roles ---
+  // We initialize the list with only the 'staff' role.
+  List<UserRole> _availableRoles = [UserRole.staff];
   UserRole _selectedRole = UserRole.staff;
   bool _isLoading = false;
   String? _errorMessage;
+
+
+  @override
+  void initState() {
+    super.initState();
+    // When the screen loads, check if an admin exists to populate the roles.
+    _checkAdminStatus();
+  }
+
+  // --- NEW: Method to dynamically load available roles ---
+  Future<void> _checkAdminStatus() async {
+    // This logic determines which roles are available in the dropdown.
+    // MUBIN-NOTE: This is a good example of UI logic that depends on the service layer.
+    final adminExists = await AuthService.instance.adminExists();
+    if (!adminExists && mounted) {
+      // If no admin exists, add the 'admin' option to the top of the list.
+      setState(() {
+        _availableRoles.insert(0, UserRole.admin);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -63,6 +87,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // --- THIS IS THE UPDATED SECTION ---
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
@@ -104,7 +129,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   labelText: 'Role',
                   border: OutlineInputBorder(),
                 ),
-                items: UserRole.values.map((UserRole role) {
+                items: _availableRoles.map((UserRole role) {
                   String roleName = role.name[0].toUpperCase() + role.name.substring(1);
                   return DropdownMenuItem<UserRole>(
                     value: role,
@@ -112,8 +137,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   );
                 }).toList(),
                 onChanged: (UserRole? newValue) {
-                  // --- FIX IS HERE ---
-                  // We check if the new value is not null before assigning it.
                   if (newValue != null) {
                     setState(() {
                       _selectedRole = newValue;
