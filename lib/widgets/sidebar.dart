@@ -4,6 +4,7 @@ import '../data/services/auth_service.dart'; // Import AuthService
 import '../screens/auth/login_screen.dart'; // Import LoginScreen for navigation
 import '../screens/products/product_list_screen.dart'; // <-- IMPORT THE NEW SCREEN
 import '../screens/history/transaction_history_screen.dart'; // <-- IMPORT THE NEW SCREEN
+import '../screens/users/manage_users_screen.dart'; // <-- 1. IMPORT THE NEW SCREEN
 
 class AppSidebar extends StatelessWidget {
   final UserRole userRole;
@@ -71,12 +72,19 @@ class AppSidebar extends StatelessWidget {
             },
           ),
           const Divider(),
+          // --- UPDATE THIS NAVIGATION ---
           if (userRole == UserRole.admin)
             ListTile(
               leading: const Icon(Icons.people),
               title: const Text('Manage Users'),
               onTap: () {
+                // First, close the drawer.
                 Navigator.pop(context);
+                // Then, navigate to the new ManageUsersScreen.
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (context) => const ManageUsersScreen()),
+                );
               },
             ),
           // --- UPDATED: LOGOUT BUTTON LOGIC ---
