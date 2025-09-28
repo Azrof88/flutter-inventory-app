@@ -1,8 +1,12 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import '../../data/models/user_model.dart';
+import '../../data/models/dummy_data.dart';
 
 class CategoryPieChart extends StatefulWidget {
-  const CategoryPieChart({super.key});
+  final UserRole userRole;
+
+  const CategoryPieChart({super.key, required this.userRole});
 
   @override
   State<CategoryPieChart> createState() => _CategoryPieChartState();
@@ -13,88 +17,85 @@ class _CategoryPieChartState extends State<CategoryPieChart> {
 
   @override
   Widget build(BuildContext context) {
+    // --- DATA HAND-OFF POINT FOR MUBIN & MEHEDI ---
+
+    // MUBIN-TODO: This data calculation logic is a perfect example of what belongs
+    // in your business logic layer. Your task is to create a new `DashboardService`
+    // (as a Singleton) and create a dummy method inside it, for example:
+    // `Future<Map<String, int>> getCategoryCounts()`.
+    // This method will perform the calculation below and return the map.
+    // This UI widget will then call your service to get the data.
+    
+    // MEHEDI-TODO: Your task is to replace Mubin's dummy `getCategoryCounts()` method
+    // with a real-time stream from Firestore. You will need to fetch all documents
+    // from the 'products' collection and then perform this same grouping and counting
+    // logic in Dart to produce the live data for the chart.
+
+    final categoryCounts = <String, int>{};
+    for (var product in DummyData.products) {
+      categoryCounts[product.categoryId] =
+          (categoryCounts[product.categoryId] ?? 0) + 1;
+    }
+
+    final sections = DummyData.categories.map((category) {
+      final count = categoryCounts[category.id] ?? 0;
+      return PieChartSectionData(
+        color: category.color,
+        value: count.toDouble(),
+        title: count.toString(),
+        radius: 60,
+        titleStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      );
+    }).toList();
+
     return Card(
-      elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 4,
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Products by Category',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+            Text(
+              "Product Categories (${widget.userRole.name})",
+              style: const TextStyle(
+                  fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            Expanded(
+              child: PieChart(
+                PieChartData(
+                  sections: sections,
+                  sectionsSpace: 2,
+                  centerSpaceRadius: 40,
+                ),
               ),
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              height: 250,
-              child: PieChart(
-                PieChartData(
-                  pieTouchData: PieTouchData(
-                    touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                      setState(() {
-                        if (!event.isInterestedForInteractions ||
-                            pieTouchResponse == null ||
-                            pieTouchResponse.touchedSection == null) {
-                          touchedIndex = -1;
-                          return;
-                        }
-                        touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
-                      });
-                    },
-                  ),
-                  borderData: FlBorderData(show: false),
-                  sectionsSpace: 2,
-                  centerSpaceRadius: 40,
-                  // The `sections` property is the key data source for this chart.
-                  // It calls the `showingSections()` method below to get its data.
-                  sections: showingSections(),
-                ),
-              ),
+
+            // This is the static legend. It's responsive because Wrap automatically
+            // creates new lines if the content is too wide for the screen.
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: DummyData.categories.map((category) {
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      color: category.color,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(category.name, style: const TextStyle(fontSize: 14)),
+                  ],
+                );
+              }).toList(),
             ),
           ],
         ),
       ),
     );
   }
-
-  // --- DATA HAND-OFF POINT FOR MUBIN & MEHEDI ---
-  List<PieChartSectionData> showingSections() {
-    // MUBIN-TODO: Your task is to create a method in your new `DashboardService`.
-    // This method, for example `getCategoryDistribution()`, will return a Map
-    // of dummy data, like: `{'Electronics': 40.0, 'Office': 30.0, ...}`.
-    // You will then write the logic here to transform that Map into the list of
-    // `PieChartSectionData` widgets that the chart needs to display.
-    // This is a key example of the business logic layer preparing data for the UI.
-
-    // MEHEDI-TODO: Your task is to replace Mubin's dummy `getCategoryDistribution`
-    // method with a real Firestore query. You will need to read all documents from the
-    // 'products' collection and group them by category to calculate the real percentages.
-    // The data you fetch will flow through Mubin's logic to dynamically build this chart.
-
-    // For now, as Azrof, I am providing hardcoded dummy data so the UI can be built and tested.
-    return List.generate(4, (i) {
-      final isTouched = i == touchedIndex;
-      final fontSize = isTouched ? 25.0 : 16.0;
-      final radius = isTouched ? 60.0 : 50.0;
-      const shadows = [Shadow(color: Colors.black, blurRadius: 2)];
-      switch (i) {
-        case 0:
-          return PieChartSectionData(color: Colors.blue.shade400, value: 40, title: '40%', radius: radius, titleStyle: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: Colors.white, shadows: shadows));
-        case 1:
-          return PieChartSectionData(color: Colors.yellow.shade600, value: 30, title: '30%', radius: radius, titleStyle: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: Colors.white, shadows: shadows));
-        case 2:
-          return PieChartSectionData(color: Colors.pink.shade300, value: 15, title: '15%', radius: radius, titleStyle: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: Colors.white, shadows: shadows));
-        case 3:
-          return PieChartSectionData(color: Colors.green.shade400, value: 15, title: '15%', radius: radius, titleStyle: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: Colors.white, shadows: shadows));
-        default:
-          throw Error();
-      }
-    });
-  }
 }
-
