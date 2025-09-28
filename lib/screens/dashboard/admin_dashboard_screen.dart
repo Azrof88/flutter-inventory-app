@@ -3,6 +3,7 @@ import '../../data/models/user_model.dart';
 import '../../widgets/metric_card.dart';
 import '../../widgets/category_pie_chart.dart';
 import 'dashboard_screen.dart';
+import '../alerts/low_stock_screen.dart'; // <-- 1. IMPORT THE NEW SCREEN
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -19,7 +20,7 @@ class AdminDashboardScreen extends StatelessWidget {
             spacing: 16.0,
             runSpacing: 16.0,
             alignment: WrapAlignment.center,
-            children: const [
+            children: [
               // --- DATA HAND-OFF POINT FOR MUBIN & MEHEDI ---
               
               // MUBIN-TODO: Your task is to create a new service file: `lib/data/services/dashboard_service.dart`.
@@ -36,7 +37,22 @@ class AdminDashboardScreen extends StatelessWidget {
               // This will require converting this screen into a StatefulWidget that can rebuild when the data from your streams changes.
 
               MetricCard(title: 'Total Products', value: '124', icon: Icons.inventory_2_outlined, iconColor: Colors.deepPurple),
-              MetricCard(title: 'Low on Stock', value: '8', icon: Icons.warning_amber_rounded, iconColor: Colors.orange),
+              // --- 2. MAKE THIS CARD INTERACTIVE ---
+              // The GestureDetector widget makes its child (the MetricCard) tappable.
+              GestureDetector(
+                onTap: () {
+                  // This navigates the user to the detailed low stock screen.
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const LowStockScreen()),
+                  );
+                },
+                child: const MetricCard(
+                  title: 'Low on Stock',
+                  value: '8',
+                  icon: Icons.warning_amber_rounded,
+                  iconColor: Colors.orange,
+                ),
+              ),
               MetricCard(title: 'Inventory Value', value: '\$15.2k', icon: Icons.attach_money_rounded, iconColor: Colors.green),
             ],
           ),

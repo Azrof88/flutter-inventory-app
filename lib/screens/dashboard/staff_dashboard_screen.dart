@@ -3,6 +3,7 @@ import '../../data/models/user_model.dart';
 import '../../widgets/metric_card.dart';
 import '../../widgets/category_pie_chart.dart';
 import 'dashboard_screen.dart';
+import '../alerts/low_stock_screen.dart'; // <-- 1. IMPORT THE NEW SCREEN
 
 class StaffDashboardScreen extends StatelessWidget {
   const StaffDashboardScreen({super.key});
@@ -19,7 +20,7 @@ class StaffDashboardScreen extends StatelessWidget {
             spacing: 16.0,
             runSpacing: 16.0,
             alignment: WrapAlignment.center,
-            children: const [
+            children: [
               // --- DATA HAND-OFF POINT FOR MUBIN & MEHEDI ---
 
               // MUBIN-TODO: Your task is to call the dummy methods from your new
@@ -33,7 +34,22 @@ class StaffDashboardScreen extends StatelessWidget {
               // can rebuild and display the live data from the database.
 
               MetricCard(title: 'Total Products', value: '124', icon: Icons.inventory_2_outlined, iconColor: Colors.deepPurple),
-              MetricCard(title: 'Low on Stock', value: '8', icon: Icons.warning_amber_rounded, iconColor: Colors.orange),
+              // --- 2. MAKE THIS CARD INTERACTIVE ---
+              // The GestureDetector widget makes its child (the MetricCard) tappable.
+              GestureDetector(
+                onTap: () {
+                  // This navigates the user to the detailed low stock screen.
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const LowStockScreen()),
+                  );
+                },
+                child: const MetricCard(
+                  title: 'Low on Stock',
+                  value: '8',
+                  icon: Icons.warning_amber_rounded,
+                  iconColor: Colors.orange,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
