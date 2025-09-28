@@ -16,12 +16,12 @@ class AuthService {
   // This list will act as our in-memory "users" database.
   // MEHEDI-TODO: This entire list will be removed and replaced by Firestore calls.
   final List<AppUser> _users = [
-    AppUser(uid: '1', email: 'admin@app.com', role: UserRole.admin),
-    AppUser(uid: '2', email: 'staff@app.com', role: UserRole.staff),
+    AppUser(uid: '1', email: 'admin@gmail.com', role: UserRole.admin),
+    AppUser(uid: '2', email: 'staff@gmail.com', role: UserRole.staff),
   ];
   final Map<String, String> _passwords = {
-    'admin@app.com': 'password',
-    'staff@app.com': 'password',
+    'admin@gmail.com': 'password',
+    'staff@gmail.com': 'password',
   };
 
 
