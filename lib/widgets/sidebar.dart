@@ -3,6 +3,7 @@ import '../data/models/user_model.dart';
 import '../data/services/auth_service.dart'; // Import AuthService
 import '../screens/auth/login_screen.dart'; // Import LoginScreen for navigation
 import '../screens/products/product_list_screen.dart'; // <-- IMPORT THE NEW SCREEN
+import '../screens/history/transaction_history_screen.dart'; // <-- IMPORT THE NEW SCREEN
 
 class AppSidebar extends StatelessWidget {
   final UserRole userRole;
@@ -61,7 +62,12 @@ class AppSidebar extends StatelessWidget {
             leading: const Icon(Icons.history),
             title: const Text('Transaction History'),
             onTap: () {
+              // First, close the drawer.
               Navigator.pop(context);
+              // Then, navigate to the new TransactionHistoryScreen.
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const TransactionHistoryScreen()),
+              );
             },
           ),
           const Divider(),

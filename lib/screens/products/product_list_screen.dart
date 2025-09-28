@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/user_model.dart';
 import 'add_edit_product_screen.dart'; // <-- IMPORT THE NEW SCREEN
 import '../../data/models/dummy_product_model.dart'; // <-- USE THE SHARED MODEL
+import '../../widgets/update_stock_dialog.dart'; // <-- 1. IMPORT THE NEW DIALOG
 
 
 
@@ -44,9 +45,48 @@ class ProductListScreen extends StatelessWidget {
                 backgroundColor: product.quantity < 5 ? Colors.red.shade100 : Colors.green.shade100,
                 labelStyle: TextStyle(color: product.quantity < 5 ? Colors.red.shade900 : Colors.green.shade900),
               ),
-              // The call to _buildActionButtons now correctly passes the specific 'product'
-              // for this list item.
-              trailing: _buildActionButtons(context, product),
+              // --- THE DEFINITIVE FIX: Use a PopupMenuButton ---
+              // This replaces the Row of icons with a single, clean "more options" button.
+              // This guarantees the layout will never overflow, regardless of how many actions we add.
+              trailing: PopupMenuButton<String>(
+                onSelected: (value) {
+                  // This is where we handle the user's selection from the menu.
+                  if (value == 'update_stock') {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext dialogContext) {
+                        return UpdateStockDialog(
+                          productName: product.name,
+                          currentQuantity: product.quantity,
+                        );
+                      },
+                    );
+                  } else if (value == 'edit') {
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => AddEditProductScreen(product: product)));
+                  } else if (value == 'delete') {
+                    // MUBIN-TODO: Implement the confirmation dialog logic here.
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  // These are the menu items that are visible to ALL roles.
+                  const PopupMenuItem<String>(
+                    value: 'update_stock',
+                    child: ListTile(leading: Icon(Icons.layers_outlined), title: Text('Update Stock')),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'edit',
+                    child: ListTile(leading: Icon(Icons.edit), title: Text('Edit')),
+                  ),
+                  // This is the ADMIN-ONLY menu item.
+                  if (userRole == UserRole.admin)
+                    const PopupMenuDivider(), // A visual separator
+                  if (userRole == UserRole.admin)
+                    const PopupMenuItem<String>(
+                      value: 'delete',
+                      child: ListTile(leading: Icon(Icons.delete, color: Colors.red), title: Text('Delete', style: TextStyle(color: Colors.red))),
+                    ),
+                ],
+              ),
             ),
           );
         },
@@ -68,6 +108,26 @@ class ProductListScreen extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+
+        // New button to open the stock update dialog
+        IconButton(
+          icon: const Icon(Icons.layers_outlined, color: Colors.grey),
+          tooltip: 'Update Stock',
+          onPressed: () {
+            // This is the function that shows our new dialog.
+            showDialog(
+              context: context,
+              builder: (BuildContext dialogContext) {
+                // We pass the product's name and current quantity to the dialog
+                // so it can display them and use them for validation.
+                return UpdateStockDialog(
+                  productName: product.name,
+                  currentQuantity: product.quantity,
+                );
+              },
+            );
+          },
+        ),
         // --- UI VARIATION (Edit Button) ---
         // This button is visible to all roles.
         IconButton(
