@@ -1,39 +1,60 @@
 import 'package:flutter/material.dart';
-import '../../data/models/user_model.dart'; // Import this to use the UserRole enum
-import 'dashboard_screen.dart'; // Import the main layout shell
+import '../../data/models/user_model.dart';
+import '../../widgets/metric_card.dart';
+import '../../widgets/category_pie_chart.dart';
+import 'dashboard_screen.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // NO Scaffold or AppBar here!
-    // This is the unique content for the admin.
-    final adminContent = Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    // A ListView is the most robust way to build this scrollable screen.
+    final adminContent = Container(
+      color: Colors.grey.shade100,
+      child: ListView(
+        padding: const EdgeInsets.all(16.0),
         children: [
-          const Text(
-            'Welcome, Admin!',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          Wrap(
+            spacing: 16.0,
+            runSpacing: 16.0,
+            alignment: WrapAlignment.center,
+            children: const [
+              // --- DATA HAND-OFF POINT FOR MUBIN & MEHEDI ---
+              
+              // MUBIN-TODO: Your task is to create a new service file: `lib/data/services/dashboard_service.dart`.
+              // This service will be a Singleton and will contain dummy methods that return hardcoded data for now.
+              // For example:
+              //   Future<int> getTotalProductCount() async { return 124; }
+              //   Future<int> getLowStockCount() async { return 8; }
+              //   Future<String> getTotalInventoryValue() async { return "\$15.2k"; }
+              // You will then call these methods to populate the `value` fields in the MetricCard widgets below.
+              
+              // MEHEDI-TODO: Your task is to replace Mubin's dummy methods in the `DashboardService`.
+              // You will implement real-time listeners to Firestore. For example, `getTotalProductCount`
+              // will listen to the `.snapshots()` of the 'products' collection and return its size.
+              // This will require converting this screen into a StatefulWidget that can rebuild when the data from your streams changes.
+
+              MetricCard(title: 'Total Products', value: '124', icon: Icons.inventory_2_outlined, iconColor: Colors.deepPurple),
+              MetricCard(title: 'Low on Stock', value: '8', icon: Icons.warning_amber_rounded, iconColor: Colors.orange),
+              MetricCard(title: 'Inventory Value', value: '\$15.2k', icon: Icons.attach_money_rounded, iconColor: Colors.green),
+            ],
           ),
           const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              // TODO: Navigate to user management screen
-            },
-            child: const Text('Manage Users'),
-          )
+          // We give the chart a fixed height to ensure it behaves predictably.
+          SizedBox(
+            height: 400,
+            child: CategoryPieChart(),
+          ),
         ],
       ),
     );
 
-    // Now, wrap the unique content with the common DashboardScreen layout.
-    // This provides the AppBar and the Drawer (sidebar).
     return DashboardScreen(
       title: 'Admin Dashboard',
       body: adminContent,
-      userRole: UserRole.admin, // Pass the role to the sidebar
+      userRole: UserRole.admin,
     );
   }
 }
+
