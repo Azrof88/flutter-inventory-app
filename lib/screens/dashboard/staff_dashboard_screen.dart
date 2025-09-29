@@ -56,7 +56,8 @@ class StaffDashboardScreen extends StatelessWidget {
           // We give the chart a fixed height to ensure it behaves predictably.
           SizedBox(
             height: 400,
-            child: CategoryPieChart(),
+            child: CategoryPieChart(userRole: UserRole.staff),
+
           ),
         ],
       ),
