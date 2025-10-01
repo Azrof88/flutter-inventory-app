@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/models/dummy_product_model.dart';
 import '../../data/services/product_service.dart';
+import '../../data/services/data_change_notifier.dart';
 import '../../widgets/update_stock_dialog.dart';
 
 class LowStockScreen extends StatefulWidget {
@@ -17,17 +18,29 @@ class _LowStockScreenState extends State<LowStockScreen> {
   void initState() {
     super.initState();
     _fetchLowStockProducts();
+    // Listen for changes from anywhere in the app and refresh
+    dataChangeNotifier.addListener(_fetchLowStockProducts);
+  }
+
+  @override
+  void dispose() {
+    // Stop listening when the widget is removed
+    dataChangeNotifier.removeListener(_fetchLowStockProducts);
+    super.dispose();
   }
 
   void _fetchLowStockProducts() {
-    setState(() {
-      _lowStockFuture = ProductService.instance.getLowStockProducts();
-    });
+    if (mounted) {
+      setState(() {
+        _lowStockFuture = ProductService.instance.getLowStockProducts();
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // THIS IS THE FIX: It is now 'appBar:' with a colon.
       appBar: AppBar(
         title: const Text('Low Stock Alerts'),
       ),
@@ -85,23 +98,23 @@ class _LowStockScreenState extends State<LowStockScreen> {
                               children: <TextSpan>[
                                 const TextSpan(text: 'Quantity: '),
                                 TextSpan(text: '${product.quantity}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 16)),
-                                const TextSpan(text: ' (Low)'),
+                                const TextSpan(text: ' (Threshold: 10)'),
                               ],
                             ),
                           ),
                           ElevatedButton(
                             onPressed: () {
+                              // Show dialog and refresh the list after it closes
                               showDialog(
                                 context: context,
                                 builder: (BuildContext dialogContext) {
-                                  // THIS IS THE FIX: Pass the productSku to the dialog.
                                   return UpdateStockDialog(
                                     productSku: product.sku,
                                     productName: product.name,
                                     currentQuantity: product.quantity,
                                   );
                                 },
-                              ).then((_) => _fetchLowStockProducts()); // Refresh list on close
+                              );
                             },
                             child: const Text('Update'),
                           ),
