@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/models/dummy_product_model.dart';
 import '../../data/models/dummy_category_model.dart';
-import '../../data/models/dummy_data.dart';
+import '../../data/services/category_service.dart'; // <-- 1. IMPORT CATEGORY SERVICE
+import '../../data/services/product_service.dart'; // <-- 2. IMPORT PRODUCT SERVICE
 
 class AddEditProductScreen extends StatefulWidget {
   final DummyProduct? product;
@@ -25,6 +26,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   DummyCategory? _selectedCategory;
   late bool _isEditing;
 
+  // MUBIN-NOTE: We now hold the list of categories in a Future.
+  late Future<List<DummyCategory>> _categoriesFuture;
+
   @override
   void initState() {
     super.initState();
@@ -32,18 +36,16 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
 
     _nameController = TextEditingController(text: widget.product?.name ?? '');
     _skuController = TextEditingController(text: widget.product?.sku ?? '');
-    _quantityController = TextEditingController(text: widget.product?.quantity.toString() ?? '0');
+    _quantityController =
+        TextEditingController(text: widget.product?.quantity.toString() ?? '0');
 
-// This logic handles pre-selecting the category in the dropdown.
+    // 3. Fetch categories from the service when the screen loads.
+    _categoriesFuture = CategoryService.instance.getCategories();
 
     if (_isEditing) {
-      try {
-        _selectedCategory = DummyData.categories.firstWhere(
-          (cat) => cat.id == widget.product!.categoryId
-        );
-      } catch (e) {
-        _selectedCategory = null;
-      }
+      // For editing, we find the matching category from the full list later
+      // in the FutureBuilder, once the categories have been fetched.
+      // This is more robust than relying on DummyData directly.
     } else if (widget.category != null) {
       _selectedCategory = widget.category;
     }
@@ -57,25 +59,48 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     super.dispose();
   }
 
-  void _onSave() {
+  void _onSave() async {
     if (_formKey.currentState!.validate()) {
-      // DATA HAND-OFF POINT FOR MUBIN & MEHEDI
+      // --- DATA HAND-OFF POINT FOR MUBIN & MEHEDI ---
 
       // MUBIN-TODO: This is where your logic begins. Your task is to take the data
       // from this form and pass it to a new `ProductService`. You will create a method
-      // in that service for both adding and updating. For example:
-      // if (_isEditing) {
-      //   productService.updateProduct(id: ..., name: ..., sku: ..., categoryId: _selectedCategory!.id);
-      // } else {
-      //   productService.addProduct(name: ..., sku: ..., categoryId: _selectedCategory!.id);
-      // }
-      // Your service methods will update your in-memory list of products.
-
+      // in that service for both adding and updating.
+      // MUBIN-NOTE: Task complete. We call the appropriate ProductService method below.
+      
       // MEHEDI-TODO: Your task is to replace Mubin's dummy `addProduct` and `updateProduct`
-      // methods with real Firestore logic. You will use `.add()` to create a new product
-      // document or `.update()` to modify an existing one in the 'products' collection.
-      // Remember to save the `_selectedCategory!.id` to the `categoryId` field in the document.
-      Navigator.of(context).pop();
+      // methods with real Firestore logic...
+
+      final name = _nameController.text;
+      final sku = _skuController.text;
+      final quantity = int.parse(_quantityController.text);
+      final categoryId = _selectedCategory!.id;
+
+      // 4. Show a loading indicator while saving.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_isEditing ? 'Updating Product...' : 'Adding Product...')),
+      );
+
+      if (_isEditing) {
+        await ProductService.instance.updateProduct(
+          originalSku: widget.product!.sku,
+          newName: name,
+          newSku: sku,
+          newQuantity: quantity,
+          newCategoryId: categoryId,
+        );
+      } else {
+        await ProductService.instance.addProduct(
+          name: name,
+          sku: sku,
+          quantity: quantity,
+          categoryId: categoryId,
+        );
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
     }
   }
 
@@ -84,12 +109,12 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     //  DATA HAND-OFF POINT FOR MUBIN & MEHEDI 
 
     // MUBIN-TODO: The list of categories for the dropdown should come from your
-    // service layer. Create a method in your `ProductService` or a new `CategoryService`
-    // called `getCategories()` that returns the `DummyData.categories` list.
-    // This screen will then call your service method to get this data.
+    // service layer...
+    // MUBIN-NOTE: Task complete. We use a FutureBuilder below to get categories from CategoryService.
     
     // MEHEDI-TODO: Your task is to replace Mubin's dummy `getCategories()` method
-    // with a real Firestore query that fetches all documents from the 'categories' collection.
+    // with a real Firestore query...
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Edit Product' : 'Add New Product'),
@@ -103,46 +128,79 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Product Name', border: OutlineInputBorder()),
-                validator: (value) => value!.isEmpty ? 'Please enter a name' : null,
+                decoration: const InputDecoration(
+                    labelText: 'Product Name', border: OutlineInputBorder()),
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter a name' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _skuController,
-                decoration: const InputDecoration(labelText: 'SKU', border: OutlineInputBorder()),
-                validator: (value) => value!.isEmpty ? 'Please enter a SKU' : null,
+                decoration: const InputDecoration(
+                    labelText: 'SKU', border: OutlineInputBorder()),
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter a SKU' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _quantityController,
-                decoration: const InputDecoration(labelText: 'Quantity', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                    labelText: 'Quantity', border: OutlineInputBorder()),
                 keyboardType: TextInputType.number,
-                validator: (value) => int.tryParse(value!) == null ? 'Please enter a valid number' : null,
+                validator: (value) => int.tryParse(value!) == null
+                    ? 'Please enter a valid number'
+                    : null,
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<DummyCategory>(
-                value: _selectedCategory,
-                decoration: const InputDecoration(
-                  labelText: 'Category',
-                  border: OutlineInputBorder(),
-                ),
-                items: DummyData.categories.map((DummyCategory category) {
-                  return DropdownMenuItem<DummyCategory>(
-                    value: category,
-                    child: Text(category.name),
+              // 5. Use a FutureBuilder to build the dropdown.
+              FutureBuilder<List<DummyCategory>>(
+                future: _categoriesFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError || !snapshot.hasData) {
+                    return const Text('Could not load categories.');
+                  }
+                  
+                  final categories = snapshot.data!;
+                  // This logic runs after categories are loaded to set the initial value
+                  // for an existing product.
+                  if (_isEditing && _selectedCategory == null) {
+                    try {
+                      _selectedCategory = categories.firstWhere((cat) => cat.id == widget.product!.categoryId);
+                    } catch (e) {
+                      _selectedCategory = null;
+                    }
+                  }
+
+                  return DropdownButtonFormField<DummyCategory>(
+                    initialValue: _selectedCategory,
+                    decoration: const InputDecoration(
+                      labelText: 'Category',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: categories.map((DummyCategory category) {
+                      return DropdownMenuItem<DummyCategory>(
+                        value: category,
+                        child: Text(category.name),
+                      );
+                    }).toList(),
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedCategory = newValue;
+                      });
+                    },
+                    validator: (value) =>
+                        value == null ? 'Please select a category' : null,
                   );
-                }).toList(),
-                onChanged: (newValue) {
-                  setState(() {
-                    _selectedCategory = newValue;
-                  });
                 },
-                validator: (value) => value == null ? 'Please select a category' : null,
               ),
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _onSave,
-                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16)),
                 child: Text(_isEditing ? 'Update Product' : 'Add Product'),
               ),
             ],

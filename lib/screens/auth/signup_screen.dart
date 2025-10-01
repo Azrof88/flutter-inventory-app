@@ -18,7 +18,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
 // --- NEW: State for dynamic roles ---
   // We initialize the list with only the 'staff' role.
-  List<UserRole> _availableRoles = [UserRole.staff];
+  final List<UserRole> _availableRoles = [UserRole.staff];
   UserRole _selectedRole = UserRole.staff;
   bool _isLoading = false;
   String? _errorMessage;
@@ -124,7 +124,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<UserRole>(
-                value: _selectedRole,
+                initialValue: _selectedRole,
                 decoration: const InputDecoration(
                   labelText: 'Role',
                   border: OutlineInputBorder(),
