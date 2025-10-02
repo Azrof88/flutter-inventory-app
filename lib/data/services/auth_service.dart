@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/models/user_model.dart';
 
 // --- DESIGN PATTERN: SINGLETON ---
@@ -12,80 +14,82 @@ class AuthService {
   // Public getter to access the instance
   static AuthService get instance => _instance;
 
-  // --- DUMMY DATA STORE ---
-  // This list will act as our in-memory "users" database.
+  // --- FIREBASE INSTANCES ---
   // MEHEDI-TODO: This entire list will be removed and replaced by Firestore calls.
-  final List<AppUser> _users = [
-    AppUser(uid: '1', email: 'admin@gmail.com', role: UserRole.admin),
-    AppUser(uid: '2', email: 'staff@gmail.com', role: UserRole.staff),
-  ];
-  final Map<String, String> _passwords = {
-    'admin@gmail.com': 'password',
-    'staff@gmail.com': 'password',
-  };
-
-
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // --- NEW: DUMMY LOGOUT LOGIC ---
   Future<void> logout() async {
-    await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
-
     // MEHEDI-TODO: This will be replaced with a single Firebase call.
     // Use `await FirebaseAuth.instance.signOut();`
     // No need to handle navigation here; that's the UI's job.
-    
-    print('Dummy user logged out.');
+    await _auth.signOut();
+    print('User logged out.');
   }
 
 
-// --- NEW: DUMMY FORGOT PASSWORD LOGIC ---
+  // --- NEW: DUMMY FORGOT PASSWORD LOGIC ---
   Future<void> forgotPassword(String email) async {
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-
     // MEHEDI-TODO: This entire block will be replaced with a single Firebase call.
     // Use `await FirebaseAuth.instance.sendPasswordResetEmail(email: email);`
     // You should wrap it in a try-catch block to handle potential Firebase
     // errors, like 'user-not-found'.
-    
-    if (_users.any((user) => user.email == email)) {
-      // In our dummy version, we just print to the console.
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
       print('Password reset link sent to $email');
-    } else {
-      // Simulate a "user not found" error.
-      throw Exception('No user found for that email.');
+    } on FirebaseAuthException catch (e) {
+      print('Error sending password reset email: ${e.message}');
+      throw Exception(e.message ?? 'An unknown error occurred.');
     }
   }
 
 
-// --- NEW: METHOD TO CHECK FOR EXISTING ADMIN ---
+  // --- NEW: METHOD TO CHECK FOR EXISTING ADMIN ---
   Future<bool> adminExists() async {
-    await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
-
     // MEHEDI-TODO: Replace this dummy logic with a real Firestore query.
     // You will need to query the 'users' collection to see if any document
     // has a 'role' field equal to 'admin'.
     // Example Query:
     // final query = await firestore.collection('users').where('role', isEqualTo: 'admin').limit(1).get();
     // return query.docs.isNotEmpty;
-    
-    // The dummy logic simply checks our in-memory list.
-    return _users.any((user) => user.role == UserRole.admin);
+    final query = await _firestore
+        .collection('users')
+        .where('role', isEqualTo: UserRole.admin.name)
+        .limit(1)
+        .get();
+        
+    return query.docs.isNotEmpty;
   }
 
   // --- DUMMY LOGIN LOGIC ---
   Future<AppUser> login(String email, String password) async {
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-
     // MEHEDI-TODO: This entire logic block will be replaced by a single call:
     // await FirebaseAuth.instance.signInWithEmailAndPassword(...)
     // You will handle exceptions from Firebase (e.g., user-not-found, wrong-password).
-    
-    final storedPassword = _passwords[email];
-    if (storedPassword == password) {
-      final user = _users.firstWhere((user) => user.email == email);
-      return user;
-    } else {
-      throw Exception('Invalid email or password');
+    try {
+      final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final User? firebaseUser = userCredential.user;
+      if (firebaseUser == null) {
+        throw Exception('Login failed, user not found.');
+      }
+
+      final DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(firebaseUser.uid).get();
+
+      if (!userDoc.exists) {
+        throw Exception('User data not found in database.');
+      }
+      
+      return AppUser.fromFirestore(userDoc);
+
+    } on FirebaseAuthException catch (e) {
+      print('Firebase Auth Error on login: ${e.message}');
+      throw Exception(e.message ?? 'Invalid email or password.');
     }
   }
 
@@ -96,26 +100,34 @@ class AuthService {
     required String password,
     required UserRole role,
   }) async {
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-
     // MEHEDI-TODO: This will be replaced by two Firebase calls:
     // 1. `FirebaseAuth.instance.createUserWithEmailAndPassword(...)`
     // 2. A call to Firestore to save the user's details (name, role) in a 'users' collection.
+    try {
+      final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-    if (_users.any((user) => user.email == email)) {
-      throw Exception('An account with this email already exists.');
+      final User? firebaseUser = userCredential.user;
+      if (firebaseUser == null) {
+        throw Exception('Sign up failed, could not create user.');
+      }
+
+      final newUser = AppUser(
+        uid: firebaseUser.uid,
+        email: email,
+        role: role,
+      );
+
+      await _firestore.collection('users').doc(newUser.uid).set(newUser.toFirestore());
+
+      print('New user signed up and data saved to Firestore: ${newUser.email}, Role: ${newUser.role}');
+
+    } on FirebaseAuthException catch (e) {
+      print('Firebase Auth Error on sign up: ${e.message}');
+      throw Exception(e.message ?? 'An unknown error occurred during sign up.');
     }
-    
-    // Create a new user and add them to our in-memory lists
-    final newUser = AppUser(
-      uid: DateTime.now().millisecondsSinceEpoch.toString(), // Dummy UID
-      email: email,
-      role: role,
-    );
-    _users.add(newUser);
-    _passwords[email] = password;
-
-    print('New user signed up: ${newUser.email}, Role: ${newUser.role}');
   }
 }
 
