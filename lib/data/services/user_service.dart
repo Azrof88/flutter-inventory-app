@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart'; // <-- ADDED: Import Firestore
 import '../models/user_model.dart';
 import 'data_change_notifier.dart';
 
@@ -7,41 +8,44 @@ class UserService {
   static final UserService _instance = UserService._internal();
   static UserService get instance => _instance;
 
-  // MUBIN-NOTE: This is our in-memory "users" table. We initialize it with
-  // the same dummy users from the manage_users_screen.dart file.
-  final List<AppUser> _users = [
-    AppUser(uid: '1', email: 'admin@gmail.com', role: UserRole.admin),
-    AppUser(uid: '3', email: 'staff@gmail.com', role: UserRole.staff),
-    AppUser(uid: '4', email: 'staff2@gmail.com', role: UserRole.staff),
-  ];
+  // <-- CHANGED: Reference to the 'users' collection in Firestore -->
+  final CollectionReference _usersCollection =
+      FirebaseFirestore.instance.collection('users');
 
-  /// Fetches a list of all users.
+  /// Fetches a list of all users from Firestore.
   Future<List<AppUser>> getUsers() async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return _users;
-  }
-
-  /// Changes a user's role from staff to admin.
-  Future<void> promoteToAdmin({required String userId}) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    final userIndex = _users.indexWhere((user) => user.uid == userId);
-
-    if (userIndex != -1) {
-      final user = _users[userIndex];
-      // Create a new user instance with the updated role
-      _users[userIndex] = AppUser(
-        uid: user.uid,
-        email: user.email,
-        role: UserRole.admin,
-      );
-      dataChangeNotifier.notify(); // Notify listeners of the change
+    try {
+      // <-- CHANGED: Get a snapshot of the entire 'users' collection -->
+      final snapshot = await _usersCollection.get();
+      
+      // Map the documents to a list of AppUser objects
+      return snapshot.docs.map((doc) => AppUser.fromFirestore(doc)).toList();
+    } catch (e) {
+      // Handle potential errors, e.g., permissions issues
+      print('Error fetching users: $e');
+      return [];
     }
   }
 
-  /// Deletes a user from the in-memory list.
+  /// Changes a user's role from staff to admin in Firestore.
+  Future<void> promoteToAdmin({required String userId}) async {
+    try {
+      // <-- CHANGED: Update the 'role' field in the specific user's document -->
+      await _usersCollection.doc(userId).update({'role': 'admin'});
+      dataChangeNotifier.notify(); // Notify listeners of the change
+    } catch (e) {
+      print('Error promoting user: $e');
+    }
+  }
+
+  /// Deletes a user's document from Firestore.
   Future<void> deleteUser({required String userId}) async {
-    await Future.delayed(const Duration(milliseconds: 600));
-    _users.removeWhere((user) => user.uid == userId);
-    dataChangeNotifier.notify(); // Notify listeners of the change
+    try {
+      // <-- CHANGED: Delete the specific user's document from the collection -->
+      await _usersCollection.doc(userId).delete();
+      dataChangeNotifier.notify(); // Notify listeners of the change
+    } catch (e) {
+      print('Error deleting user: $e');
+    }
   }
 }
