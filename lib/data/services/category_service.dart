@@ -1,21 +1,17 @@
-import '../models/dummy_category_model.dart';
-import '../models/dummy_data.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/category_model.dart';
 
-// --- DESIGN PATTERN: SINGLETON ---
 class CategoryService {
-  // Private constructor
   CategoryService._internal();
-
-  // The single, static instance
   static final CategoryService _instance = CategoryService._internal();
-
-  // Public getter to access the instance
   static CategoryService get instance => _instance;
 
-  /// Fetches the list of all available categories.
-  Future<List<DummyCategory>> getCategories() async {
-    // Simulate a network delay
-    await Future.delayed(const Duration(milliseconds: 200));
-    return DummyData.categories;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  /// Fetches a live stream of all available categories.
+  Stream<List<Category>> getCategoriesStream() {
+    return _firestore.collection('categories').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) => Category.fromMap(doc.data(), doc.id)).toList();
+    });
   }
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/models/user_model.dart';
 import '../../data/services/dashboard_service.dart';
-import '../../data/services/data_change_notifier.dart';
 import '../../widgets/metric_card.dart';
 import '../../widgets/category_pie_chart.dart';
 import 'dashboard_screen.dart';
@@ -17,30 +16,14 @@ class AdminDashboardScreen extends StatefulWidget {
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final DashboardService _dashboardService = DashboardService.instance;
 
-  void _refreshData() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
+  // REMOVED initState, dispose, and _refreshData methods. They are no longer needed.
 
-  @override
-  void initState() {
-    super.initState();
-    dataChangeNotifier.addListener(_refreshData);
-  }
-
-  @override
-  void dispose() {
-    dataChangeNotifier.removeListener(_refreshData);
-    super.dispose();
-  }
-
-  Widget _buildMetricCard(Future<dynamic> future, String title, IconData icon, Color iconColor) {
-    return FutureBuilder<dynamic>(
-      future: future,
+  Widget _buildMetricCard(Stream<dynamic> stream, String title, IconData icon, Color iconColor) {
+    return StreamBuilder<dynamic>(
+      stream: stream,
       builder: (context, snapshot) {
         String value = '...';
-        if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.active && snapshot.hasData) {
           value = snapshot.data.toString();
         } else if (snapshot.hasError) {
           value = 'Error';
@@ -77,7 +60,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           const SizedBox(height: 20),
           const SizedBox(
             height: 400,
-            child: CategoryPieChart(userRole: UserRole.admin),
+            child: CategoryPieChart(),
           ),
         ],
       ),
@@ -90,3 +73,4 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 }
+

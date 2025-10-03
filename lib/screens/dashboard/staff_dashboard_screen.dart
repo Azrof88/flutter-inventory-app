@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/models/user_model.dart';
 import '../../data/services/dashboard_service.dart';
-import '../../data/services/data_change_notifier.dart';
 import '../../widgets/metric_card.dart';
 import '../../widgets/category_pie_chart.dart';
 import 'dashboard_screen.dart';
@@ -17,30 +16,15 @@ class StaffDashboardScreen extends StatefulWidget {
 class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
   final DashboardService _dashboardService = DashboardService.instance;
 
-  void _refreshData() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
+  // The old initState, dispose, and _refreshData methods have been removed.
+  // The StreamBuilder now handles all live updates automatically.
 
-  @override
-  void initState() {
-    super.initState();
-    dataChangeNotifier.addListener(_refreshData);
-  }
-
-  @override
-  void dispose() {
-    dataChangeNotifier.removeListener(_refreshData);
-    super.dispose();
-  }
-
-  Widget _buildMetricCard(Future<dynamic> future, String title, IconData icon, Color iconColor) {
-    return FutureBuilder<dynamic>(
-      future: future,
+  Widget _buildMetricCard(Stream<dynamic> stream, String title, IconData icon, Color iconColor) {
+    return StreamBuilder<dynamic>(
+      stream: stream,
       builder: (context, snapshot) {
         String value = '...';
-        if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.active && snapshot.hasData) {
           value = snapshot.data.toString();
         } else if (snapshot.hasError) {
           value = 'Error';
@@ -76,7 +60,8 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
           const SizedBox(height: 20),
           const SizedBox(
             height: 400,
-            child: CategoryPieChart(userRole: UserRole.staff),
+            // The userRole parameter has been correctly removed here.
+            child: CategoryPieChart(),
           ),
         ],
       ),
@@ -89,3 +74,4 @@ class _StaffDashboardScreenState extends State<StaffDashboardScreen> {
     );
   }
 }
+

@@ -1,74 +1,49 @@
-import 'data_change_notifier.dart';
-import '../models/dummy_data.dart';
-import '../models/dummy_product_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/product_model.dart';
 
-// --- DESIGN PATTERN: SINGLETON ---
 class ProductService {
   ProductService._internal();
   static final ProductService _instance = ProductService._internal();
   static ProductService get instance => _instance;
 
-  final List<DummyProduct> _products = DummyData.products;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<List<DummyProduct>> getAllProducts() async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return _products;
+  // --- REAL-TIME STREAMS ---
+  Stream<List<Product>> getProductsStream() {
+    return _firestore.collection('products').snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) => Product.fromMap(doc.data(), doc.id)).toList();
+    });
   }
 
-  Future<List<DummyProduct>> getProductsByCategory(String categoryId) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return _products.where((product) => product.categoryId == categoryId).toList();
+  Stream<List<Product>> getProductsByCategoryStream(String categoryId) {
+    return _firestore
+        .collection('products')
+        .where('categoryId', isEqualTo: categoryId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => Product.fromMap(doc.data(), doc.id)).toList();
+    });
   }
   
-  // --- NEW METHOD ADDED HERE ---
-  /// Fetches all products with quantity less than or equal to 10.
-  Future<List<DummyProduct>> getLowStockProducts() async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    // MUBIN-NOTE: Filtering based on the user's requirement of quantity <= 10.
-    return _products.where((p) => p.quantity <= 10).toList();
+  Stream<List<Product>> getLowStockProductsStream() {
+    return _firestore.collection('products').snapshots().map((snapshot) {
+       return snapshot.docs
+        .map((doc) => Product.fromMap(doc.data(), doc.id))
+        .where((product) => product.quantity <= product.reorderLevel)
+        .toList();
+    });
   }
 
-  Future<void> addProduct({
-    required String name,
-    required String sku,
-    required int quantity,
-    required String categoryId,
-  }) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    _products.add(
-      DummyProduct(
-        name: name,
-        sku: sku,
-        quantity: quantity,
-        categoryId: categoryId,
-      ),
-    );
-    dataChangeNotifier.notify();
+  // --- CRUD OPERATIONS ---
+  Future<void> addProduct(Product product) async {
+    await _firestore.collection('products').add(product.toMap());
   }
 
-  Future<void> updateProduct({
-    required String originalSku,
-    required String newName,
-    required String newSku,
-    required int newQuantity,
-    required String newCategoryId,
-  }) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    final index = _products.indexWhere((p) => p.sku == originalSku);
-    if (index != -1) {
-      _products[index] = DummyProduct(
-        name: newName,
-        sku: newSku,
-        quantity: newQuantity,
-        categoryId: newCategoryId,
-      );
-      dataChangeNotifier.notify();
-    }
+  Future<void> updateProduct(Product product) async {
+    await _firestore.collection('products').doc(product.id).update(product.toMap());
   }
 
-  Future<void> deleteProduct(String sku) async {
-    await Future.delayed(const Duration(milliseconds: 600));
-    _products.removeWhere((p) => p.sku == sku);
-    dataChangeNotifier.notify();
+  Future<void> deleteProduct(String productId) async {
+    await _firestore.collection('products').doc(productId).delete();
   }
 }
