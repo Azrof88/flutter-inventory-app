@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_app_check/firebase_app_check.dart'; // Add this new import
 import 'screens/auth/login_screen.dart'; // Import your login screen
 
 // MEHEDI-TODO: You will need to add Firebase initialization here.
@@ -7,7 +10,31 @@ import 'screens/auth/login_screen.dart'; // Import your login screen
 // 3. You will also need to change the main function to be `async`.
 //    e.g., `void main() async { ... }`
 
-void main() {
+void main() async {
+  // This line is required to use async/await before runApp()
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // This loads the variables from your .env file
+  await dotenv.load(fileName: ".env");
+
+  // This uses your keys from the .env file to connect to the correct Firebase project
+  await Firebase.initializeApp(
+    options: FirebaseOptions(
+      apiKey: dotenv.env['FIREBASE_API_KEY']!,
+      authDomain: dotenv.env['FIREBASE_AUTH_DOMAIN']!,
+      projectId: dotenv.env['FIREBASE_PROJECT_ID']!,
+      storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET']!,
+      messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID']!,
+      appId: dotenv.env['FIREBASE_APP_ID']!,
+    ),
+  );
+  
+  // Add this line to activate App Check in debug mode
+  await FirebaseAppCheck.instance.activate(
+    androidProvider: AndroidProvider.debug,
+  );
+  
+  // This runs your app after Firebase has been initialized
   runApp(const MyApp());
 }
 

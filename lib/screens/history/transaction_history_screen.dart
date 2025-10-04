@@ -11,13 +11,8 @@ class TransactionHistoryScreen extends StatefulWidget {
 }
 
 class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
-  late Future<List<Transaction>> _transactionsFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _transactionsFuture = TransactionService.instance.getTransactions();
-  }
+  // Switched from a Future to a live Stream
+  final Stream<List<Transaction>> _transactionsStream = TransactionService.instance.getTransactionsStream();
 
   @override
   Widget build(BuildContext context) {
@@ -25,8 +20,9 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       appBar: AppBar(
         title: const Text('Transaction History'),
       ),
-      body: FutureBuilder<List<Transaction>>(
-        future: _transactionsFuture,
+      // Switched from FutureBuilder to StreamBuilder to show live updates
+      body: StreamBuilder<List<Transaction>>(
+        stream: _transactionsStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -90,3 +86,4 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     );
   }
 }
+

@@ -1,41 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../data/models/user_model.dart';
-import '../data/models/dummy_data.dart';
+import '../data/models/pie_chart_data_model.dart';
 import '../data/services/dashboard_service.dart';
-import '../data/services/data_change_notifier.dart';
 
 class CategoryPieChart extends StatefulWidget {
-  final UserRole userRole;
-  const CategoryPieChart({super.key, required this.userRole});
+  const CategoryPieChart({super.key});
 
   @override
   State<CategoryPieChart> createState() => _CategoryPieChartState();
 }
 
 class _CategoryPieChartState extends State<CategoryPieChart> {
-  Future<Map<String, int>>? _categoryCountsFuture;
-
-  void _refreshData() {
-    if (mounted) {
-      setState(() {
-        _categoryCountsFuture = DashboardService.instance.getCategoryProductCounts();
-      });
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _categoryCountsFuture = DashboardService.instance.getCategoryProductCounts();
-    dataChangeNotifier.addListener(_refreshData);
-  }
-
-  @override
-  void dispose() {
-    dataChangeNotifier.removeListener(_refreshData);
-    super.dispose();
-  }
+  // We now only need to listen to one, combined stream.
+  final Stream<List<PieChartCategoryData>> _pieChartDataStream =
+      DashboardService.instance.getPieChartData();
 
   @override
   Widget build(BuildContext context) {
@@ -46,14 +24,14 @@ class _CategoryPieChartState extends State<CategoryPieChart> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Text(
-              "Product Categories (${widget.userRole.name})",
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            const Text(
+              "Product Categories",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
             Expanded(
-              child: FutureBuilder<Map<String, int>>(
-                future: _categoryCountsFuture,
+              child: StreamBuilder<List<PieChartCategoryData>>(
+                stream: _pieChartDataStream,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -62,20 +40,27 @@ class _CategoryPieChartState extends State<CategoryPieChart> {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   }
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(child: Text('No product data available.'));
+                    return const Center(
+                        child: Text('No product data available.'));
                   }
 
-                  final categoryCounts = snapshot.data!;
-                  final sections = DummyData.categories.map((category) {
-                    final count = categoryCounts[category.id] ?? 0;
+                  final pieData = snapshot.data!;
+                  final sections = pieData
+                      .where((data) => data.productCount > 0) // Only show categories with products
+                      .map((data) {
                     return PieChartSectionData(
-                      color: category.color,
-                      value: count.toDouble(),
-                      title: count.toString(),
+                      color: data.color,
+                      value: data.productCount.toDouble(),
+                      title: data.productCount.toString(),
                       radius: 60,
-                      titleStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      titleStyle: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
                     );
                   }).toList();
+                  
+                  if (sections.isEmpty) {
+                     return const Center(child: Text('No products in any category.'));
+                  }
 
                   return PieChart(
                     PieChartData(
@@ -88,24 +73,34 @@ class _CategoryPieChartState extends State<CategoryPieChart> {
               ),
             ),
             const SizedBox(height: 20),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: DummyData.categories.map((category) {
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 12,
-                      height: 12,
-                      color: category.color,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(category.name, style: const TextStyle(fontSize: 14)),
-                  ],
+            // The legend is also built from the same, single stream.
+            StreamBuilder<List<PieChartCategoryData>>(
+              stream: _pieChartDataStream,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                final pieData = snapshot.data!;
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  children: pieData.map((data) {
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          color: data.color,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(data.categoryName, style: const TextStyle(fontSize: 14)),
+                      ],
+                    );
+                  }).toList(),
                 );
-              }).toList(),
+              },
             ),
           ],
         ),
@@ -113,3 +108,4 @@ class _CategoryPieChartState extends State<CategoryPieChart> {
     );
   }
 }
+
