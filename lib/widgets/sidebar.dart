@@ -5,6 +5,9 @@ import '../screens/auth/login_screen.dart'; // Import LoginScreen for navigation
 import '../screens/products/product_list_screen.dart'; // <-- IMPORT THE NEW SCREEN
 import '../screens/history/transaction_history_screen.dart'; // <-- IMPORT THE NEW SCREEN
 import '../screens/users/manage_users_screen.dart'; // <-- 1. IMPORT THE NEW SCREEN
+import '../screens/analytics/inventory_recommendations_screen.dart';
+import '../screens/analytics/sales_forecast_screen.dart';
+import '../screens/analytics/abc_analysis_screen.dart';
 
 class AppSidebar extends StatelessWidget {
   final UserRole userRole;
@@ -72,6 +75,18 @@ class AppSidebar extends StatelessWidget {
             },
           ),
           const Divider(),
+          // Analytics Section
+          if (userRole == UserRole.admin) ...[
+            ListTile(
+              leading: const Icon(Icons.analytics),
+              title: const Text('Analytics'),
+              subtitle: const Text('Advanced insights'),
+              onTap: () {
+                Navigator.pop(context);
+                _showAnalyticsBottomSheet(context);
+              },
+            ),
+          ],
           // --- UPDATE THIS NAVIGATION ---
           if (userRole == UserRole.admin)
             ListTile(
@@ -108,6 +123,58 @@ class AppSidebar extends StatelessWidget {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  void _showAnalyticsBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Analytics & Reports',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              leading: const Icon(Icons.recommend, color: Colors.blue),
+              title: const Text('Inventory Recommendations'),
+              subtitle: const Text('AI-powered reorder suggestions'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const InventoryRecommendationsScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.trending_up, color: Colors.green),
+              title: const Text('Sales Forecast'),
+              subtitle: const Text('30-day sales predictions'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const SalesForecastScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.category, color: Colors.orange),
+              title: const Text('ABC Analysis'),
+              subtitle: const Text('Product classification by value'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const AbcAnalysisScreen()),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
