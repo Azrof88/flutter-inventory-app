@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../data/services/analytics_service.dart';
 import '../../data/services/product_service.dart';
-import '../../data/models/dummy_product_model.dart';
+import '../../data/models/product_model.dart';
 
 class AbcAnalysisScreen extends StatefulWidget {
   const AbcAnalysisScreen({super.key});
@@ -15,7 +15,7 @@ class _AbcAnalysisScreenState extends State<AbcAnalysisScreen> {
   bool _isLoading = true;
   String? _error;
   Map<String, dynamic>? _analysis;
-  List<DummyProduct> _products = [];
+  List<Product> _products = [];
 
   @override
   void initState() {
