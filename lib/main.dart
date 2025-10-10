@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:firebase_app_check/firebase_app_check.dart'; // Add this new import
-import 'screens/auth/login_screen.dart'; // Import your login screen
+import 'screens/auth/login_screen.dart';
 
 // MEHEDI-TODO: You will need to add Firebase initialization here.
 // 1. Make sure to call `WidgetsFlutterBinding.ensureInitialized();`
@@ -26,12 +25,8 @@ void main() async {
       storageBucket: dotenv.env['FIREBASE_STORAGE_BUCKET']!,
       messagingSenderId: dotenv.env['FIREBASE_MESSAGING_SENDER_ID']!,
       appId: dotenv.env['FIREBASE_APP_ID']!,
+      measurementId: dotenv.env['FIREBASE_MEASUREMENT_ID'], // Add measurement ID for web
     ),
-  );
-  
-  // Add this line to activate App Check in debug mode
-  await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.debug,
   );
   
   // This runs your app after Firebase has been initialized

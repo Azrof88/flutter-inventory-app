@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../data/services/analytics_service.dart';
 import '../../data/services/product_service.dart';
-import '../../data/models/dummy_product_model.dart';
+import '../../data/models/product_model.dart';
 
 class SalesForecastScreen extends StatefulWidget {
   const SalesForecastScreen({super.key});
@@ -15,7 +15,7 @@ class _SalesForecastScreenState extends State<SalesForecastScreen> {
   bool _isLoading = true;
   String? _error;
   Map<String, dynamic>? _forecast;
-  List<DummyProduct> _products = [];
+  List<Product> _products = [];
   String? _selectedProductId;
 
   @override
@@ -41,7 +41,12 @@ class _SalesForecastScreenState extends State<SalesForecastScreen> {
       
       setState(() {
         _forecast = forecast;
-        _selectedProductId = _products.isNotEmpty ? _products.first.sku : null;
+        // Set selected product ID to the first product's ID from the forecast data
+        if (forecast['forecasts'] != null && forecast['forecasts'].isNotEmpty) {
+          _selectedProductId = forecast['forecasts'].first['productId'];
+        } else {
+          _selectedProductId = _products.isNotEmpty ? _products.first.id : null;
+        }
         _isLoading = false;
       });
     } catch (e) {
@@ -152,7 +157,9 @@ class _SalesForecastScreenState extends State<SalesForecastScreen> {
             ),
             const SizedBox(height: 8),
             DropdownButton<String>(
-              value: _selectedProductId,
+              value: forecasts.any((f) => f['productId'] == _selectedProductId) 
+                  ? _selectedProductId 
+                  : null,
               isExpanded: true,
               items: forecasts.map<DropdownMenuItem<String>>((forecast) {
                 return DropdownMenuItem<String>(

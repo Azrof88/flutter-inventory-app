@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../data/services/analytics_service.dart';
 import '../../data/services/product_service.dart';
-import '../../data/models/dummy_product_model.dart';
+import '../../data/models/product_model.dart';
 
 class InventoryRecommendationsScreen extends StatefulWidget {
   const InventoryRecommendationsScreen({super.key});
@@ -15,7 +15,7 @@ class _InventoryRecommendationsScreenState extends State<InventoryRecommendation
   bool _isLoading = true;
   String? _error;
   Map<String, dynamic>? _recommendations;
-  List<DummyProduct> _products = [];
+  List<Product> _products = [];
 
   @override
   void initState() {
@@ -114,19 +114,19 @@ class _InventoryRecommendationsScreenState extends State<InventoryRecommendation
               if (_error!.contains('server is not running'))
                 Card(
                   color: Colors.blue[50],
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                  child: const Padding(
+                    padding: EdgeInsets.all(16.0),
                     child: Column(
                       children: [
-                        const Text(
+                        Text(
                           'Start the Python Backend:',
                           style: TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: 8),
-                        const Text('1. Open terminal in python_backend folder'),
-                        const Text('2. Activate virtual environment:'),
-                        const Text('   .\\inventory_env\\Scripts\\Activate.ps1'),
-                        const Text('3. Run: python main.py'),
+                        SizedBox(height: 8),
+                        Text('1. Open terminal in python_backend folder'),
+                        Text('2. Activate virtual environment:'),
+                        Text('   .\\inventory_env\\Scripts\\Activate.ps1'),
+                        Text('3. Run: python main.py'),
                       ],
                     ),
                   ),

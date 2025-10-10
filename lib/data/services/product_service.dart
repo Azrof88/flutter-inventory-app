@@ -34,6 +34,12 @@ class ProductService {
     });
   }
 
+  // --- GET OPERATIONS ---
+  Future<List<Product>> getAllProducts() async {
+    final snapshot = await _firestore.collection('products').get();
+    return snapshot.docs.map((doc) => Product.fromMap(doc.data(), doc.id)).toList();
+  }
+
   // --- CRUD OPERATIONS ---
   Future<void> addProduct(Product product) async {
     await _firestore.collection('products').add(product.toMap());

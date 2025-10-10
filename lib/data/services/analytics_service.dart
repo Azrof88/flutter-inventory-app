@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/dummy_product_model.dart';
+import '../models/product_model.dart';
 
 class AnalyticsService {
   static const String baseUrl = 'http://localhost:8000';
@@ -13,19 +13,19 @@ class AnalyticsService {
   
   AnalyticsService._internal();
 
-  Future<Map<String, dynamic>> getInventoryRecommendations(List<DummyProduct> products) async {
+  Future<Map<String, dynamic>> getInventoryRecommendations(List<Product> products) async {
     try {
       final url = Uri.parse('$baseUrl/analytics/recommendations');
       
-      // Convert DummyProduct to the format expected by the API
+      // Convert Product to the format expected by the API
       final productsData = products.map((product) => {
-        'id': product.sku, // Using SKU as ID for now
+        'id': product.id,
         'name': product.name,
         'sku': product.sku,
         'categoryId': product.categoryId,
         'quantity': product.quantity,
-        'unitPrice': 25.0, // Default price since DummyProduct doesn't have it
-        'reorderLevel': 10,
+        'unitPrice': product.unitPrice,
+        'reorderLevel': product.reorderLevel,
       }).toList();
 
       final requestBody = {
@@ -49,18 +49,18 @@ class AnalyticsService {
     }
   }
 
-  Future<Map<String, dynamic>> getSalesForecast(List<DummyProduct> products) async {
+  Future<Map<String, dynamic>> getSalesForecast(List<Product> products) async {
     try {
       final url = Uri.parse('$baseUrl/analytics/sales-forecast');
       
       final productsData = products.map((product) => {
-        'id': product.sku,
+        'id': product.id,
         'name': product.name,
         'sku': product.sku,
         'categoryId': product.categoryId,
         'quantity': product.quantity,
-        'unitPrice': 25.0,
-        'reorderLevel': 10,
+        'unitPrice': product.unitPrice,
+        'reorderLevel': product.reorderLevel,
       }).toList();
 
       final requestBody = {
@@ -84,18 +84,18 @@ class AnalyticsService {
     }
   }
 
-  Future<Map<String, dynamic>> getAbcAnalysis(List<DummyProduct> products) async {
+  Future<Map<String, dynamic>> getAbcAnalysis(List<Product> products) async {
     try {
       final url = Uri.parse('$baseUrl/analytics/abc-analysis');
       
       final productsData = products.map((product) => {
-        'id': product.sku,
+        'id': product.id,
         'name': product.name,
         'sku': product.sku,
         'categoryId': product.categoryId,
         'quantity': product.quantity,
-        'unitPrice': 25.0,
-        'reorderLevel': 10,
+        'unitPrice': product.unitPrice,
+        'reorderLevel': product.reorderLevel,
       }).toList();
 
       final requestBody = {
@@ -119,18 +119,18 @@ class AnalyticsService {
     }
   }
 
-  Future<Map<String, dynamic>> getPerformanceMetrics(List<DummyProduct> products) async {
+  Future<Map<String, dynamic>> getPerformanceMetrics(List<Product> products) async {
     try {
       final url = Uri.parse('$baseUrl/analytics/performance-metrics');
       
       final productsData = products.map((product) => {
-        'id': product.sku,
+        'id': product.id,
         'name': product.name,
         'sku': product.sku,
         'categoryId': product.categoryId,
         'quantity': product.quantity,
-        'unitPrice': 25.0,
-        'reorderLevel': 10,
+        'unitPrice': product.unitPrice,
+        'reorderLevel': product.reorderLevel,
       }).toList();
 
       final requestBody = {

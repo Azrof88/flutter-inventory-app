@@ -149,7 +149,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                   }
 
                   return DropdownButtonFormField<Category>(
-                    value: _selectedCategory,
+                    initialValue: _selectedCategory,
                     decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
                     items: categories.map((Category category) {
                       return DropdownMenuItem<Category>(
